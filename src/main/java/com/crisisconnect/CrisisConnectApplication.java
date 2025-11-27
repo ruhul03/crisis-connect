@@ -9,5 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class CrisisConnectApplication {
     public static void main(String[] args) {
         SpringApplication.run(CrisisConnectApplication.class, args);
+
+        /* this is the main run file just click run */
     }
 }
