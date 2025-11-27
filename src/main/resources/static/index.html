@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisConnect - Disaster Messaging</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #667eea;
+        }
+
+        .header .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.9);
+            margin: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .status-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-item.critical {
+            border-left-color: #dc3545;
+        }
+
+        .status-item.need-help {
+            border-left-color: #ffc107;
+        }
+
+        .status-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .status-message {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .status-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.emergency {
+            background: #dc3545;
+            color: white;
+        }
+
+        .message.status {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .message.system {
+            background: #6c757d;
+            color: white;
+            font-style: italic;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .message-sender {
+            font-weight: bold;
+        }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .message-content {
+            line-height: 1.4;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            flex: 1;
+            resize: none;
+            min-height: 50px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-emergency {
+            background: #dc3545;
+        }
+
+        .btn-emergency:hover {
+            background: #c82333;
+        }
+
+        .connection-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .connection-status.connected {
+            background: #28a745;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .my-status {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .my-status h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚨 CrisisConnect</h1>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="userCount">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="messageCount">0</div>
+                <div class="stat-label">Messages</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="criticalCount">0</div>
+                <div class="stat-label">Critical</div>
+            </div>
+        </div>
+        <div class="connection-status disconnected" id="status">Disconnected</div>
+    </div>
+
+    <div class="sidebar">
+        <div class="my-status">
+            <h3>My Status</h3>
+            <select id="myStatus" onchange="updateMyStatus()">
+                <option value="SAFE">✅ Safe</option>
+                <option value="NEED_HELP">⚠️ Need Help</option>
+                <option value="INJURED">🤕 Injured</option>
+                <option value="CRITICAL">🚨 Critical</option>
+            </select>
+        </div>
+
+        <div class="status-section">
+            <h2>📊 Status Board</h2>
+            <div class="status-list" id="statusList">
+                <div style="text-align: center; color: #999; padding: 20px;">
+                    No status updates yet
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="messages" id="messages"></div>
+
+        <div class="input-area">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+                <div class="user-info">
+                    <input type="text" id="userName" placeholder="Your name" style="flex: 1;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <textarea id="messageInput" placeholder="Type your message..."></textarea>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button onclick="sendMessage()">Send</button>
+                        <button class="btn-emergency" onclick="sendEmergency()">🚨 SOS</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stompClient = null;
+    let userName = '';
+    let userId = generateUUID();
+    let messageCount = 0;
+
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8080/ws-crisis');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+            document.getElementById('status').textContent = 'Connected';
+            document.getElementById('status').className = 'connection-status connected';
+
+            // Subscribe to messages
+            stompClient.subscribe('/topic/messages', function(message) {
+                const msg = JSON.parse(message.body);
+                displayMessage(msg);
+            });
+
+            // Subscribe to status updates
+            stompClient.subscribe('/topic/status', function(status) {
+                const statusEntry = JSON.parse(status.body);
+                updateStatusBoard(statusEntry);
+            });
+
+            loadMessages();
+            loadStatuses();
+        });
+    }
+
+    function displayMessage(msg) {
+        const messagesDiv = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+
+        if (msg.type === 'EMERGENCY') messageDiv.classList.add('emergency');
+        if (msg.type === 'STATUS_UPDATE') messageDiv.classList.add('status');
+        if (msg.type === 'SYSTEM') messageDiv.classList.add('system');
+
+        const time = new Date(msg.timestamp).toLocaleTimeString();
+
+        messageDiv.innerHTML = `
+            <div class="message-header">
+                <span class="message-sender">${msg.senderName}</span>
+                <span class="message-time">${time}</span>
+            </div>
+            <div class="message-content">${msg.content}</div>
+        `;
+
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        messageCount++;
+        document.getElementById('messageCount').textContent = messageCount;
+    }
+
+    function updateStatusBoard(statusEntry) {
+        const statusList = document.getElementById('statusList');
+        let statusItem = document.getElementById('status-' + statusEntry.userId);
+
+        if (!statusItem) {
+            statusItem = document.createElement('div');
+            statusItem.id = 'status-' + statusEntry.userId;
+            statusItem.className = 'status-item';
+            statusList.appendChild(statusItem);
+        }
+
+        statusItem.className = 'status-item';
+        if (statusEntry.status === 'CRITICAL') statusItem.classList.add('critical');
+        if (statusEntry.status === 'NEED_HELP') statusItem.classList.add('need-help');
+
+        const time = new Date(statusEntry.timestamp).toLocaleTimeString();
+
+        statusItem.innerHTML = `
+            <div class="status-name">${statusEntry.userName}</div>
+            <div class="status-message">${statusEntry.message || statusEntry.status}</div>
+            <div class="status-time">${time}</div>
+        `;
+
+        updateStats();
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const nameInput = document.getElementById('userName');
+
+        if (!nameInput.value.trim()) {
+            alert('Please enter your name');
+            return;
+        }
+
+        if (!input.value.trim()) return;
+
+        userName = nameInput.value.trim();
+
+        const message = {
+            id: generateUUID(),
+            senderId: userId,
+            senderName: userName,
+            content: input.value,
+            type: 'TEXT',
+            priority: 'NORMAL',
+            timestamp: new Date().toISOString()
+        };
+
+        fetch('http://localhost:8080/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(message)
+        });
+
+        input.value = '';
+    }
+
+    function sendEmergency() {
+        const nameInput = document.getElementById('userName');
+
+        if (!nameInput.value.trim()) {
+            alert('Please enter your name');
+            return;
+        }
+
+        userName = nameInput.value.trim();
+
+        const message = {
+            id: generateUUID(),
+            senderId: userId,
+            senderName: userName,
+            content: '🚨 EMERGENCY! I need immediate help!',
+            type: 'EMERGENCY',
+            priority: 'CRITICAL',
+            timestamp: new Date().toISOString()
+        };
+
+        fetch('http://localhost:8080/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(message)
+        });
+    }
+
+    function updateMyStatus() {
+        const nameInput = document.getElementById('userName');
+        const statusSelect = document.getElementById('myStatus');
+
+        if (!nameInput.value.trim()) {
+            alert('Please enter your name');
+            return;
+        }
+
+        userName = nameInput.value.trim();
+
+        const statusEntry = {
+            userId: userId,
+            userName: userName,
+            status: statusSelect.value,
+            message: statusSelect.options[statusSelect.selectedIndex].text,
+            timestamp: new Date().toISOString(),
+            batteryLevel: 100,
+            hasInternet: false
+        };
+
+        fetch('http://localhost:8080/api/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(statusEntry)
+        });
+    }
+
+    function loadMessages() {
+        fetch('http://localhost:8080/api/messages')
+            .then(response => response.json())
+            .then(messages => {
+                messages.forEach(msg => displayMessage(msg));
+            });
+    }
+
+    function loadStatuses() {
+        fetch('http://localhost:8080/api/status')
+            .then(response => response.json())
+            .then(statuses => {
+                statuses.forEach(status => updateStatusBoard(status));
+            });
+    }
+
+    function updateStats() {
+        fetch('http://localhost:8080/api/stats')
+            .then(response => response.json())
+            .then(stats => {
+                document.getElementById('userCount').textContent = stats.activeUsers;
+                document.getElementById('criticalCount').textContent = stats.criticalUsers;
+            });
+    }
+
+    // Enter key to send
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Connect on load
+    window.onload = function() {
+        connect();
+        setInterval(updateStats, 5000);
+    };
+</script>
+</body>
+</html>
