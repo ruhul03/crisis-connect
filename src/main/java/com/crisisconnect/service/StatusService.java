@@ -2,6 +2,7 @@ package com.crisisconnect.service;
 
 import com.crisisconnect.model.StatusEntry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +46,7 @@ public class StatusService {
         return statusBoard.get(userId);
     }
 
-    public void removeStatus(String userId) {
+    public void removeStatus(@NonNull String userId) {
         StatusEntry removed = statusBoard.remove(userId);
         if (removed != null) {
             messagingTemplate.convertAndSend("/topic/status/removed", userId);

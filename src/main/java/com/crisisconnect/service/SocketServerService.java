@@ -1,7 +1,7 @@
 package com.crisisconnect.service;
 
 import com.crisisconnect.model.Message;
-import com.crisisconnect.model.NetworkNode;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

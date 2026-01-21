@@ -5,6 +5,7 @@ import com.crisisconnect.service.MessageBroadcastService;
 import com.crisisconnect.service.SocketServerService;
 import com.crisisconnect.service.StatusService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -42,8 +43,8 @@ public class CrisisConnectControllerTest {
         message.setPriority(Message.MessagePriority.NORMAL);
 
         mockMvc.perform(post("/api/messages")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(message)))
+                .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(Objects.requireNonNull(objectMapper.writeValueAsString(message))))
                 .andExpect(status().isOk());
     }
 
@@ -55,8 +56,8 @@ public class CrisisConnectControllerTest {
         // Type and Priority are also null by default
 
         mockMvc.perform(post("/api/messages")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(message)))
+                .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(Objects.requireNonNull(objectMapper.writeValueAsString(message))))
                 .andExpect(status().isBadRequest());
     }
 }

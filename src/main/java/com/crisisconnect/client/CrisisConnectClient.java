@@ -38,8 +38,8 @@ public class CrisisConnectClient {
         String userId = UUID.randomUUID().toString();
 
         try (Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             System.out.println("✅ Connected to CrisisConnect Server");
             System.out.println("Commands: 'status' (update status), 'emergency' (send emergency), 'quit' (exit)");
@@ -83,6 +83,7 @@ public class CrisisConnectClient {
         }
 
         System.out.println("👋 Disconnected from CrisisConnect");
+        scanner.close();
     }
 
     private static Message createMessage(String userId, String userName, String input) {

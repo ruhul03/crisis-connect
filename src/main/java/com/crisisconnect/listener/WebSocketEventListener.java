@@ -1,6 +1,5 @@
 package com.crisisconnect.listener;
 
-import com.crisisconnect.service.MessageBroadcastService;
 import com.crisisconnect.service.StatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;

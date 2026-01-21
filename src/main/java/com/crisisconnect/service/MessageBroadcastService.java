@@ -3,6 +3,7 @@ package com.crisisconnect.service;
 import com.crisisconnect.model.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class MessageBroadcastService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    public void broadcastMessage(Message message) {
+    public void broadcastMessage(@NonNull Message message) {
         // Store in history
         messageHistory.add(message);
         if (messageHistory.size() > MAX_HISTORY_SIZE) {
