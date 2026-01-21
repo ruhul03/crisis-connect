@@ -101,6 +101,21 @@
         </main>
     </div>
 
+    <!-- Location Input Modal -->
+    <div id="locationModal" class="modal" style="display: none;">
+        <div class="modal-content card">
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 1rem;">Share Location Details</h3>
+            <div class="input-wrapper" style="margin-bottom: 1rem;">
+                <i class="ph-bold ph-map-pin input-icon"></i>
+                <input type="text" id="manualLocationInput" class="input-field has-icon" placeholder="Describe your location (e.g. 'Red House, Roof')..." autocomplete="off">
+            </div>
+            <div class="modal-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button id="btnCancelLoc" class="btn btn-sm" style="background: transparent; border: 1px solid var(--glass-border);">Cancel</button>
+                <button id="btnConfirmLoc" class="btn btn-sm">Share Location</button>
+            </div>
+        </div>
+    </div>
+
     <!-- App Logic -->
     <script src="js/app.js"></script>
 </body>

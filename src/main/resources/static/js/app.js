@@ -58,6 +58,12 @@ const app = {
         this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
         document.getElementById('btnShareLoc').addEventListener('click', () => this.shareLocation());
 
+        // Modal Events
+        document.getElementById('btnConfirmLoc').addEventListener('click', () => this.confirmShareLocation());
+        document.getElementById('btnCancelLoc').addEventListener('click', () => {
+            document.getElementById('locationModal').style.display = 'none';
+        });
+
         this.dom.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -208,6 +214,22 @@ const app = {
     shareLocation() {
         if (!this.validateUser()) return;
 
+        // Show Modal
+        const modal = document.getElementById('locationModal');
+        const input = document.getElementById('manualLocationInput');
+
+        modal.style.display = 'flex';
+        input.value = '';
+        input.focus();
+    },
+
+    confirmShareLocation() {
+        const modal = document.getElementById('locationModal');
+        const input = document.getElementById('manualLocationInput');
+        const manualText = input.value.trim();
+
+        modal.style.display = 'none';
+
         if (!navigator.geolocation) {
             this.showToast('Geolocation is not supported by your browser', 'error');
             return;
@@ -218,11 +240,13 @@ const app = {
         navigator.geolocation.getCurrentPosition((pos) => {
             const { latitude, longitude } = pos.coords;
 
+            const locationText = manualText ? `📍 ${manualText}` : `📍 Shared Location`;
+
             // 1. Send as a message
             const message = {
                 senderId: this.userId,
                 senderName: this.userName,
-                content: `📍 Shared Location: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+                content: `${locationText} (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
                 type: 'LOCATION',
                 priority: 'NORMAL',
                 latitude: latitude,
@@ -235,7 +259,7 @@ const app = {
                 userId: this.userId,
                 userName: this.userName,
                 status: this.dom.statusSelect.value,
-                message: '📍 Location updated',
+                message: manualText ? `📍 ${manualText}` : '📍 Location updated',
                 hasInternet: navigator.onLine,
                 latitude: latitude,
                 longitude: longitude
