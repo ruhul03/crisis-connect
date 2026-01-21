@@ -108,8 +108,8 @@ const app = {
     connect() {
         if (this.stompClient && this.stompClient.connected) return;
 
-        // Use absolute URL to allow running from file:// for demo purposes
-        const socket = new SockJS('http://localhost:8080/ws-crisis');
+        // Use relative URL to allow connection from any host (localhost, LAN IP, etc.)
+        const socket = new SockJS('/ws-crisis');
         this.stompClient = Stomp.over(socket);
         this.stompClient.debug = null; // Disable debug logs for cleaner console
 
