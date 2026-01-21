@@ -112,6 +112,12 @@ const app = {
             document.getElementById('locationModal').style.display = 'none';
         });
 
+        document.getElementById('manualLocationInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.confirmShareLocation();
+            }
+        });
+
         this.dom.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -554,7 +560,13 @@ const app = {
         }).catch(e => console.error('Error loading history:', e));
 
         fetch(`${baseUrl}/api/status`).then(r => r.json()).then(statuses => {
-            statuses.forEach(s => this.updateStatusBoard(s));
+            statuses.forEach(s => {
+                this.updateStatusBoard(s);
+                // Sync my own status if found
+                if (s.userId === this.userId) {
+                    this.dom.statusSelect.value = s.status;
+                }
+            });
         });
 
         this.updateStats();
@@ -611,12 +623,13 @@ const app = {
             this.messageQueue.push({ url, data });
             localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
 
-            this.showToast('Network unreachable. Message queued.', 'warning');
-
             // Optimistically show message in chat if it's a message
             if (url.includes('/messages')) {
                 const offlineMsg = { ...data, timestamp: new Date().toISOString() };
                 this.displayMessage(offlineMsg, true);
+                // Suppress annoying toast for messages since we show optimistic UI
+            } else {
+                this.showToast('Network unreachable. Action queued.', 'warning');
             }
         });
     },
