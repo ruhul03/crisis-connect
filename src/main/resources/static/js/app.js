@@ -5,8 +5,24 @@ const app = {
     messageQueue: JSON.parse(localStorage.getItem('crisis_message_queue') || '[]'),
 
     init() {
-        this.userId = this.generateUUID();
+        // Try to recover identity from storage
+        const storedId = localStorage.getItem('crisis_user_id');
+        const storedName = localStorage.getItem('crisis_user_name');
+
+        if (storedId) {
+            this.userId = storedId;
+        } else {
+            this.userId = this.generateUUID();
+            localStorage.setItem('crisis_user_id', this.userId);
+        }
+
         this.cacheDOM();
+
+        if (storedName) {
+            this.userName = storedName;
+            this.dom.nameInput.value = storedName;
+        }
+
         this.bindEvents();
         this.connect();
 
@@ -40,6 +56,7 @@ const app = {
         this.dom.statusSelect.addEventListener('change', () => this.updateMyStatus());
         this.dom.btnConnect.addEventListener('click', () => this.connect());
         this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
+        document.getElementById('btnShareLoc').addEventListener('click', () => this.shareLocation());
 
         this.dom.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -149,6 +166,7 @@ const app = {
             return false;
         }
         this.userName = name;
+        localStorage.setItem('crisis_user_name', name);
         return true;
     },
 
@@ -187,6 +205,51 @@ const app = {
         this.post('/api/messages', message);
     },
 
+    shareLocation() {
+        if (!this.validateUser()) return;
+
+        if (!navigator.geolocation) {
+            this.showToast('Geolocation is not supported by your browser', 'error');
+            return;
+        }
+
+        this.showToast('Acquiring location...', 'info');
+
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude } = pos.coords;
+
+            // 1. Send as a message
+            const message = {
+                senderId: this.userId,
+                senderName: this.userName,
+                content: `📍 Shared Location: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+                type: 'LOCATION',
+                priority: 'NORMAL',
+                latitude: latitude,
+                longitude: longitude
+            };
+            this.post('/api/messages', message);
+
+            // 2. Update status with location
+            const statusEntry = {
+                userId: this.userId,
+                userName: this.userName,
+                status: this.dom.statusSelect.value,
+                message: '📍 Location updated',
+                hasInternet: navigator.onLine,
+                latitude: latitude,
+                longitude: longitude
+            };
+            this.post('/api/status', statusEntry);
+
+            this.showToast('Location shared successfully', 'success');
+
+        }, (err) => {
+            console.error(err);
+            this.showToast('Unable to retrieve location', 'error');
+        });
+    },
+
     updateMyStatus() {
         if (!this.validateUser()) return;
 
@@ -196,7 +259,9 @@ const app = {
             userName: this.userName,
             status: select.value,
             message: select.options[select.selectedIndex].text,
-            hasInternet: navigator.onLine
+            hasInternet: navigator.onLine,
+            // We don't auto-update location on status change to save battery/privacy,
+            // unless we cache it. For now, separate share location button is better.
         };
 
         this.post('/api/status', statusEntry);
@@ -217,9 +282,18 @@ const app = {
         if (entry.status === 'CRITICAL') statusClass = 'critical';
         if (entry.status === 'NEED_HELP') statusClass = 'help';
 
+        const locationBadge = (entry.latitude && entry.longitude)
+            ? `<a href="https://www.google.com/maps?q=${entry.latitude},${entry.longitude}" target="_blank" title="View Location" style="color: var(--accent-color); margin-left: auto;">
+                 <i class="ph-fill ph-map-pin"></i>
+               </a>`
+            : '';
+
         item.className = `status-card ${statusClass}`;
         item.innerHTML = `
-            <div class="status-user-name">${entry.userName}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div class="status-user-name">${entry.userName}</div>
+                ${locationBadge}
+            </div>
             <div class="status-user-msg">${entry.message || entry.status}</div>
         `;
     },
@@ -308,8 +382,9 @@ const app = {
 
         const div = document.createElement('div');
         const isMe = msg.senderId === this.userId;
+        const msgType = (msg.type || 'TEXT').toLowerCase();
 
-        div.className = `message-bubble ${msg.type.toLowerCase()} ${isMe ? 'is-me' : ''}`;
+        div.className = `message-bubble ${msgType} ${isMe ? 'is-me' : ''}`;
         if (isOffline) div.style.opacity = '0.7';
 
         const time = new Date(msg.timestamp || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -320,7 +395,13 @@ const app = {
                 <span class="sender-name">${msg.senderName}</span>
                 <span class="msg-time">${time}${offlineLabel}</span>
             </div>
-            <div class="message-content">${msg.content}</div>
+            <div class="message-content">
+                ${msg.type === 'LOCATION' && msg.latitude ?
+                `<a href="https://www.google.com/maps?q=${msg.latitude},${msg.longitude}" target="_blank" style="color: var(--accent-color); text-decoration: underline;">
+                     <i class="ph-bold ph-map-pin"></i> View on Map
+                   </a><br>` : ''}
+                ${msg.content}
+            </div>
         `;
 
         this.dom.messagesContainer.appendChild(div);

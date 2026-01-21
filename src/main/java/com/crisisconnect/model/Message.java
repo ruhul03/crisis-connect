@@ -30,6 +30,9 @@ public class Message {
     @NotNull(message = "Priority is required")
     private MessagePriority priority;
 
+    private Double latitude;
+    private Double longitude;
+
     public enum MessageType {
         TEXT, STATUS_UPDATE, EMERGENCY, LOCATION, SYSTEM
     }

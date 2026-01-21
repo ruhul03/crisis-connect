@@ -22,4 +22,6 @@ public class StatusEntry {
     private LocalDateTime timestamp;
     private int batteryLevel;
     private boolean hasInternet;
+    private Double latitude;
+    private Double longitude;
 }
