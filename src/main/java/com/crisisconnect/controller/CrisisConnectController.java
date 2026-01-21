@@ -36,7 +36,7 @@ public class CrisisConnectController {
     private SocketServerService socketServerService;
 
     // Send a new message
-    @PostMapping("/messages")
+    @PostMapping(value = "/messages", produces = "application/json")
     public ResponseEntity<Message> sendMessage(@Valid @RequestBody Message message) {
         message.setId(UUID.randomUUID().toString());
         message.setTimestamp(LocalDateTime.now());
