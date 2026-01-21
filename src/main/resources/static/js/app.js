@@ -21,22 +21,46 @@ const app = {
         if (storedName) {
             this.userName = storedName;
             this.dom.nameInput.value = storedName;
+            this.showToast(`Welcome back, ${this.userName}`, 'info');
         }
 
         // Show QR Button always
         try { document.getElementById('btnShowQR').style.display = 'block'; } catch (e) { }
 
         this.bindEvents();
-        this.connect();
+
+        // Only connect if we have an identity
+        if (this.userName) {
+            this.connect();
+        }
 
         // Polling for stats mainly, real-time updates come via WebSocket
         setInterval(() => this.updateStats(), 5000);
+    },
+
+    switchTab(tab) {
+        const sidebar = document.querySelector('.app-sidebar');
+        const chatArea = document.querySelector('.chat-area');
+        const tabs = document.querySelectorAll('.nav-item');
+
+        tabs.forEach(t => t.classList.remove('active'));
+
+        if (tab === 'chat') {
+            sidebar.classList.remove('active');
+            chatArea.classList.remove('hidden');
+            tabs[0].classList.add('active');
+        } else {
+            sidebar.classList.add('active');
+            chatArea.classList.add('hidden');
+            tabs[1].classList.add('active');
+        }
     },
 
     cacheDOM() {
         this.dom = {
             statusBadge: document.getElementById('connectionStatus'),
             messagesContainer: document.getElementById('messagesContainer'),
+            statusList: document.getElementById('statusList'),
             statusList: document.getElementById('statusList'),
             messageInput: document.getElementById('messageInput'),
             nameInput: document.getElementById('userNameInput'),
@@ -95,6 +119,34 @@ const app = {
             this.showToast('Network disconnected. You are offline.', 'error');
             this.setConnectionStatus(false);
         });
+        window.addEventListener('offline', () => {
+            this.showToast('Network disconnected. You are offline.', 'error');
+            this.setConnectionStatus(false);
+        });
+
+        // Identity Modal Events
+        const btnJoin = document.getElementById('btnJoin');
+        const nameInput = document.getElementById('modalNameInput');
+
+        const joinAction = () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                this.userName = name;
+                localStorage.setItem('crisis_user_name', name);
+                document.getElementById('identityModal').style.display = 'none';
+                this.connect();
+                this.showToast(`Welcome, ${name}!`, 'success');
+            } else {
+                this.showToast('Please enter your name', 'error');
+            }
+        };
+
+        if (btnJoin) {
+            btnJoin.addEventListener('click', joinAction);
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') joinAction();
+            });
+        }
     },
 
     generateUUID() {
