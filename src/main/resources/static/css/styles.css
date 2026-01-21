@@ -64,16 +64,24 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    height: 100%;
+    /* Ensure it takes full header height if needed */
 }
 
 .logo-icon {
-    font-size: 1.5rem;
+    /* Image styles */
+    display: block;
+    object-fit: contain;
     filter: drop-shadow(0 0 8px var(--accent-glow));
 }
 
 .logo-text {
     font-weight: 800;
     font-size: 1.25rem;
+    line-height: 1;
+    /* Tighten line height for better centering */
+    padding-top: 2px;
+    /* Visual optical alignment */
     background: linear-gradient(135deg, #60a5fa, #3b82f6);
     -webkit-background-clip: text;
     background-clip: text;
@@ -382,17 +390,28 @@ body {
     justify-content: space-between;
     margin-bottom: 0.5rem;
     font-size: 0.75rem;
-    align-items: center;
+    align-items: baseline;
+    /* Align by text baseline */
+    gap: 0.75rem;
+    /* Ensure minimum space between name and time */
 }
 
 .sender-name {
     font-weight: 700;
     color: var(--accent-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    /* Allow flex item to shrink properly */
 }
 
 .msg-time {
     color: var(--text-secondary);
     font-size: 0.7rem;
+    flex-shrink: 0;
+    /* Prevent time from squishing */
+    white-space: nowrap;
 }
 
 .message-content {
