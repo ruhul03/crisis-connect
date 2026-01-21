@@ -116,6 +116,17 @@ public class CrisisConnectController {
         return ResponseEntity.ok(health);
     }
 
+    // Explicit disconnect
+    @PostMapping("/disconnect")
+    public ResponseEntity<Void> disconnect(@RequestBody Map<String, String> payload) {
+        String userId = payload.get("userId");
+        if (userId != null) {
+            statusService.removeStatus(userId);
+            log.info("User explicitly disconnected: {}", userId);
+        }
+        return ResponseEntity.ok().build();
+    }
+
     // Clear message history (admin function)
     @DeleteMapping("/messages")
     public ResponseEntity<Void> clearMessages() {

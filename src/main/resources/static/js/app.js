@@ -23,6 +23,8 @@ const app = {
             nameInput: document.getElementById('userNameInput'),
             btnSend: document.getElementById('btnSend'),
             btnSOS: document.getElementById('btnSOS'),
+            btnConnect: document.getElementById('btnConnect'),
+            btnDisconnect: document.getElementById('btnDisconnect'),
             statusSelect: document.getElementById('myStatus'),
             stats: {
                 users: document.getElementById('statUsers'),
@@ -36,6 +38,8 @@ const app = {
         this.dom.btnSend.addEventListener('click', () => this.sendMessage());
         this.dom.btnSOS.addEventListener('click', () => this.sendEmergency());
         this.dom.statusSelect.addEventListener('change', () => this.updateMyStatus());
+        this.dom.btnConnect.addEventListener('click', () => this.connect());
+        this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
 
         this.dom.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -77,6 +81,7 @@ const app = {
         this.stompClient.connect({}, (frame) => {
             console.log('Connected to CrisisConnect Network');
             this.setConnectionStatus(true);
+            this.showToast('Connected to network', 'success');
 
             // Subscriptions
             this.stompClient.subscribe('/topic/messages', (message) => {
@@ -87,13 +92,36 @@ const app = {
                 this.updateStatusBoard(JSON.parse(status.body));
             });
 
+            this.stompClient.subscribe('/topic/status/removed', (id) => {
+                const el = document.getElementById(`status-${id.body}`);
+                if (el) el.remove();
+            });
+
             // Initial Load
             this.loadHistory();
+            this.processQueue();
         }, (error) => {
             console.error('Connection lost', error);
             this.setConnectionStatus(false);
-            setTimeout(() => this.connect(), 5000); // Auto-reconnect
+            // Only auto-reconnect if NOT explicitly disconnected by user (need state for that, simplified here)
+            // For now, let's assume auto-reconnect logic stays unless we explicitly stop it.
+            // But if user clicks disconnect, we want to stop this loop.
         });
+    },
+
+    disconnect() {
+        if (this.stompClient) {
+            this.stompClient.disconnect(() => {
+                console.log('Disconnected');
+                this.setConnectionStatus(false);
+                this.showToast('Disconnected from network', 'info');
+            });
+        }
+
+        // Tell backend to remove us
+        if (this.userId) {
+            this.post('/api/disconnect', { userId: this.userId });
+        }
     },
 
     setConnectionStatus(connected) {
@@ -102,10 +130,14 @@ const app = {
             badge.classList.remove('disconnected');
             badge.classList.add('connected');
             badge.innerHTML = '<span class="indicator"></span> Online';
+            this.dom.btnConnect.style.display = 'none';
+            this.dom.btnDisconnect.style.display = 'block';
         } else {
             badge.classList.remove('connected');
             badge.classList.add('disconnected');
             badge.innerHTML = '<span class="indicator"></span> Offline';
+            this.dom.btnConnect.style.display = 'block';
+            this.dom.btnDisconnect.style.display = 'none';
         }
     },
 

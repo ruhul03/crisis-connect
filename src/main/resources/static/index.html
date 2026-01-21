@@ -39,8 +39,12 @@
                 </div>
             </div>
 
-            <div class="connection-badge disconnected" id="connectionStatus">
-                <span class="indicator"></span> Offline
+            <div class="header-controls" style="display: flex; gap: 1rem; align-items: center;">
+                <button id="btnConnect" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; display: none;">Connect</button>
+                <button id="btnDisconnect" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.8rem; display: none;">Disconnect</button>
+                <div class="connection-badge disconnected" id="connectionStatus">
+                    <span class="indicator"></span> Offline
+                </div>
             </div>
         </header>
 
