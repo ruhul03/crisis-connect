@@ -2,6 +2,9 @@ const app = {
     stompClient: null,
     userId: null,
     userName: '',
+    reconnectDelay: 1000,
+    maxReconnectDelay: 10000,
+    isReconnecting: false,
     messageQueue: JSON.parse(localStorage.getItem('crisis_message_queue') || '[]'),
 
     init() {
@@ -175,6 +178,11 @@ const app = {
             this.setConnectionStatus(true);
             this.showToast('Connected to network', 'success');
 
+            // Stop Reconnecting UI
+            this.isReconnecting = false;
+            this.reconnectDelay = 1000;
+            this.showReconnectingBanner(false);
+
             // Subscriptions
             this.stompClient.subscribe('/topic/messages', (message) => {
                 this.displayMessage(JSON.parse(message.body));
@@ -195,11 +203,69 @@ const app = {
         }, (error) => {
             console.error('Connection lost', error);
             this.setConnectionStatus(false);
-            // Only auto-reconnect if NOT explicitly disconnected by user (need state for that, simplified here)
-            // For now, let's assume auto-reconnect logic stays unless we explicitly stop it.
-            // But if user clicks disconnect, we want to stop this loop.
+            this.handleReconnection();
         });
     },
+
+    handleReconnection() {
+        if (this.isReconnecting) return;
+        this.isReconnecting = true;
+
+        this.showReconnectingBanner(true);
+
+        const retry = () => {
+            if (this.stompClient && this.stompClient.connected) {
+                this.isReconnecting = false;
+                this.reconnectDelay = 1000; // Reset
+                this.showReconnectingBanner(false);
+                return;
+            }
+
+            console.log(`Reconnecting in ${this.reconnectDelay}ms...`);
+            setTimeout(() => {
+                this.connect();
+                // Check if connection succeeded shortly after
+                setTimeout(() => {
+                    if (!this.stompClient || !this.stompClient.connected) {
+                        // Increase delay (exponential backoff)
+                        this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay);
+                        retry();
+                    } else {
+                        // Success handled in connect() callback logic (we can't easily hook there from here without promises)
+                        // But connect() success callback sets connection status to true.
+                        // We need to reset flags IF successful.
+                        // Actually, better to rely on connect success callback to clear flags.
+                        // But connect() doesn't clear flags yet. Let's fix connect() success.
+                    }
+                }, 500); // Wait a bit for connect attempt
+            }, this.reconnectDelay);
+        };
+
+        retry();
+    },
+
+    showReconnectingBanner(show) {
+        let banner = document.getElementById('reconnectBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'reconnectBanner';
+            banner.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%;
+                background: var(--warning-color); color: black; font-weight: bold;
+                text-align: center; padding: 0.5rem; z-index: 2000;
+                transform: translateY(-100%); transition: transform 0.3s;
+            `;
+            banner.textContent = '⚠️ Connection lost. Reconnecting...';
+            document.body.appendChild(banner);
+        }
+
+        if (show) {
+            banner.style.transform = 'translateY(0)';
+        } else {
+            banner.style.transform = 'translateY(-100%)';
+        }
+    },
+
 
     disconnect() {
         if (this.stompClient) {
