@@ -230,8 +230,34 @@ const app = {
 
         modal.style.display = 'none';
 
+        const shareTextOnly = () => {
+            if (manualText) {
+                const message = {
+                    senderId: this.userId,
+                    senderName: this.userName,
+                    content: `📍 ${manualText}`,
+                    type: 'LOCATION',
+                    priority: 'NORMAL'
+                };
+                this.post('/api/messages', message);
+
+                const statusEntry = {
+                    userId: this.userId,
+                    userName: this.userName,
+                    status: this.dom.statusSelect.value,
+                    message: `📍 ${manualText}`,
+                    hasInternet: navigator.onLine
+                };
+                this.post('/api/status', statusEntry);
+
+                this.showToast('Location shared (Text Only)', 'warning');
+            } else {
+                this.showToast('Unable to share location without permissions or text', 'error');
+            }
+        };
+
         if (!navigator.geolocation) {
-            this.showToast('Geolocation is not supported by your browser', 'error');
+            shareTextOnly();
             return;
         }
 
@@ -270,7 +296,7 @@ const app = {
 
         }, (err) => {
             console.error(err);
-            this.showToast('Unable to retrieve location', 'error');
+            shareTextOnly();
         });
     },
 
