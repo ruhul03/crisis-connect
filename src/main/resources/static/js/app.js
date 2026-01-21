@@ -227,8 +227,14 @@ const app = {
     loadHistory() {
         const baseUrl = 'http://localhost:8080';
         fetch(`${baseUrl}/api/messages`).then(r => r.json()).then(msgs => {
-            this.dom.messagesContainer.innerHTML = ''; // Clear existing
-            msgs.forEach(m => this.displayMessage(m));
+            // Remove empty state if messages exist
+            if (msgs.length > 0) {
+                this.dom.messagesContainer.innerHTML = '';
+                msgs.forEach(m => this.displayMessage(m));
+            } else {
+                // If 0 messages, keep empty state (or restore it) - implementation simplified
+                // this.dom.messagesContainer.innerHTML = '...empty state html...';
+            }
         }).catch(e => console.error('Error loading history:', e));
 
         fetch(`${baseUrl}/api/status`).then(r => r.json()).then(statuses => {
@@ -296,6 +302,10 @@ const app = {
     },
 
     displayMessage(msg, isOffline = false) {
+        // Remove empty state if present
+        const emptyState = this.dom.messagesContainer.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+
         const div = document.createElement('div');
         const isMe = msg.senderId === this.userId;
 

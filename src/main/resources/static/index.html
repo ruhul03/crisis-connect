@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrisisConnect | Disaster Command Center</title>
     
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
@@ -20,28 +21,28 @@
         <!-- Header -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="logo-icon">🚨</span>
+                <i class="ph-fill ph-siren" style="font-size: 2rem; color: var(--danger-color);"></i>
                 <span class="logo-text">CrisisConnect</span>
             </div>
             
             <div class="header-stats">
                 <div class="stat-item">
                     <div class="stat-value" id="statUsers">0</div>
-                    <div class="stat-label">Active Units</div>
+                    <div class="stat-label"><i class="ph-bold ph-users-three"></i> Active</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="statMessages">0</div>
-                    <div class="stat-label">Messages</div>
+                    <div class="stat-label"><i class="ph-bold ph-chat-centered-text"></i> Msgs</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="statCritical" style="color: var(--danger-color)">0</div>
-                    <div class="stat-label">Critical</div>
+                    <div class="stat-label"><i class="ph-bold ph-warning-circle"></i> Critical</div>
                 </div>
             </div>
 
             <div class="header-controls" style="display: flex; gap: 1rem; align-items: center;">
-                <button id="btnConnect" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; display: none;">Connect</button>
-                <button id="btnDisconnect" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.8rem; display: none;">Disconnect</button>
+                <button id="btnConnect" class="btn btn-sm" style="display: none;"><i class="ph-bold ph-plug"></i> Connect</button>
+                <button id="btnDisconnect" class="btn btn-sm btn-danger" style="display: none;"><i class="ph-bold ph-plugs"></i> Disconnect</button>
                 <div class="connection-badge disconnected" id="connectionStatus">
                     <span class="indicator"></span> Offline
                 </div>
@@ -51,19 +52,19 @@
         <!-- Sidebar -->
         <aside class="app-sidebar">
             <div class="my-status-card card">
-                <div class="section-title">My Status</div>
+                <div class="section-title"><i class="ph-bold ph-user-focus"></i> My Status</div>
                 <div class="status-selector">
                     <select id="myStatus">
-                        <option value="SAFE">✅ Safe - I am secure</option>
-                        <option value="NEED_HELP">⚠️ Need Help - Require assistance</option>
-                        <option value="INJURED">🤕 Injured - Need medical aid</option>
-                        <option value="CRITICAL">🚨 Critical - Immediate danger</option>
+                        <option value="SAFE">Safe & Secure</option>
+                        <option value="NEED_HELP">Need Assistance</option>
+                        <option value="INJURED">Medical Emergency</option>
+                        <option value="CRITICAL">Critical Danger</option>
                     </select>
                 </div>
             </div>
 
             <div class="status-feed">
-                <div class="section-title">Network Status</div>
+                <div class="section-title"><i class="ph-bold ph-broadcast"></i> Network Feed</div>
                 <div class="status-list" id="statusList">
                     <!-- Status items injected here -->
                 </div>
@@ -73,17 +74,27 @@
         <!-- Main Chat Area -->
         <main class="chat-area">
             <div class="messages-container" id="messagesContainer">
+                <div class="empty-state" style="margin: auto; text-align: center; color: var(--text-secondary); opacity: 0.5;">
+                    <i class="ph-duotone ph-chat-circle-dots" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                    <p>No messages yet. Start the conversation.</p>
+                </div>
                 <!-- Messages injected here -->
             </div>
 
             <div class="input-zone">
                 <div class="input-row">
-                    <input type="text" id="userNameInput" class="input-field" placeholder="Identify yourself (Name/ID)" autocomplete="off">
+                    <div class="input-wrapper" style="flex:1;">
+                         <i class="ph-bold ph-user input-icon"></i>
+                         <input type="text" id="userNameInput" class="input-field has-icon" placeholder="Your Identity" autocomplete="off">
+                    </div>
                 </div>
                 <div class="input-row">
-                    <input type="text" id="messageInput" class="input-field" placeholder="Type a message..." autocomplete="off">
-                    <button class="btn" id="btnSend">Send</button>
-                    <button class="btn btn-danger" id="btnSOS">SOS</button>
+                    <div class="input-wrapper" style="flex:1;">
+                        <i class="ph-bold ph-paper-plane-right input-icon"></i>
+                        <input type="text" id="messageInput" class="input-field has-icon" placeholder="Type a message..." autocomplete="off">
+                    </div>
+                    <button class="btn btn-icon" id="btnSend"><i class="ph-bold ph-arrow-right"></i></button>
+                    <button class="btn btn-danger btn-icon" id="btnSOS" title="Send SOS"><i class="ph-bold ph-warning"></i></button>
                 </div>
             </div>
         </main>
