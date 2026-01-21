@@ -5,6 +5,7 @@ const app = {
     reconnectDelay: 1000,
     maxReconnectDelay: 10000,
     isReconnecting: false,
+    reconnectTimeout: null,
     messageQueue: JSON.parse(localStorage.getItem('crisis_message_queue') || '[]'),
 
     init() {
@@ -212,8 +213,12 @@ const app = {
         this.isReconnecting = true;
 
         this.showReconnectingBanner(true);
+        // Force update UI to show Cancel button
+        this.setConnectionStatus(false);
 
         const retry = () => {
+            if (!this.isReconnecting) return;
+
             if (this.stompClient && this.stompClient.connected) {
                 this.isReconnecting = false;
                 this.reconnectDelay = 1000; // Reset
@@ -222,20 +227,14 @@ const app = {
             }
 
             console.log(`Reconnecting in ${this.reconnectDelay}ms...`);
-            setTimeout(() => {
+            this.reconnectTimeout = setTimeout(() => {
                 this.connect();
                 // Check if connection succeeded shortly after
                 setTimeout(() => {
-                    if (!this.stompClient || !this.stompClient.connected) {
+                    if ((!this.stompClient || !this.stompClient.connected) && this.isReconnecting) {
                         // Increase delay (exponential backoff)
                         this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay);
                         retry();
-                    } else {
-                        // Success handled in connect() callback logic (we can't easily hook there from here without promises)
-                        // But connect() success callback sets connection status to true.
-                        // We need to reset flags IF successful.
-                        // Actually, better to rely on connect success callback to clear flags.
-                        // But connect() doesn't clear flags yet. Let's fix connect() success.
                     }
                 }, 500); // Wait a bit for connect attempt
             }, this.reconnectDelay);
@@ -268,12 +267,23 @@ const app = {
 
 
     disconnect() {
+        // Stop any pending reconnection
+        this.isReconnecting = false;
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
+        this.showReconnectingBanner(false);
+
         if (this.stompClient) {
             this.stompClient.disconnect(() => {
                 console.log('Disconnected');
                 this.setConnectionStatus(false);
                 this.showToast('Disconnected from network', 'info');
             });
+        } else {
+            // Force UI update if client was already null
+            this.setConnectionStatus(false);
         }
 
         // Tell backend to remove us
@@ -288,14 +298,26 @@ const app = {
             badge.classList.remove('disconnected');
             badge.classList.add('connected');
             badge.innerHTML = '<span class="indicator"></span> Online';
+
             this.dom.btnConnect.style.display = 'none';
             this.dom.btnDisconnect.style.display = 'block';
+            this.dom.btnDisconnect.innerHTML = '<i class="ph-bold ph-plugs"></i> Disconnect';
+
         } else {
             badge.classList.remove('connected');
             badge.classList.add('disconnected');
             badge.innerHTML = '<span class="indicator"></span> Offline';
-            this.dom.btnConnect.style.display = 'block';
-            this.dom.btnDisconnect.style.display = 'none';
+
+            if (this.isReconnecting) {
+                // Reconnecting state: Show Cancel button
+                this.dom.btnConnect.style.display = 'none';
+                this.dom.btnDisconnect.style.display = 'block';
+                this.dom.btnDisconnect.innerHTML = '<i class="ph-bold ph-x"></i> Cancel Retry';
+            } else {
+                // Normal offline state
+                this.dom.btnConnect.style.display = 'block';
+                this.dom.btnDisconnect.style.display = 'none';
+            }
         }
     },
 
