@@ -387,13 +387,14 @@ body {
 
 .message-header {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    justify-content: flex-start;
+    /* Keep name and time together */
+    margin-bottom: 0.25rem;
+    /* Reduce vertical space slightly */
     font-size: 0.75rem;
     align-items: baseline;
-    /* Align by text baseline */
-    gap: 0.75rem;
-    /* Ensure minimum space between name and time */
+    gap: 0.5rem;
+    /* Adjusted gap */
 }
 
 .sender-name {
