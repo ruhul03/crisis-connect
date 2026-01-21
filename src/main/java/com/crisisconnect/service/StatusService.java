@@ -17,6 +17,7 @@ public class StatusService {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final Map<String, StatusEntry> statusBoard = new ConcurrentHashMap<>();
+    private final Map<String, String> sessionToUserMap = new ConcurrentHashMap<>();
 
     public StatusService(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
@@ -32,6 +33,10 @@ public class StatusService {
         log.info("📊 Status updated for {}: {}", entry.getUserName(), entry.getStatus());
     }
 
+    public void registerSession(String sessionId, String userId) {
+        sessionToUserMap.put(sessionId, userId);
+    }
+
     public List<StatusEntry> getAllStatuses() {
         return new ArrayList<>(statusBoard.values());
     }
@@ -45,6 +50,23 @@ public class StatusService {
         if (removed != null) {
             messagingTemplate.convertAndSend("/topic/status/removed", userId);
             log.info("Status removed for user: {}", userId);
+        }
+        sessionToUserMap.values().remove(userId);
+    }
+
+    public void handleDisconnect(String sessionId) {
+        String userId = sessionToUserMap.remove(sessionId);
+        if (userId != null) {
+            StatusEntry entry = statusBoard.get(userId);
+            if (entry != null) {
+                entry.setStatus("OFFLINE");
+                entry.setTimestamp(LocalDateTime.now());
+                statusBoard.put(userId, entry);
+
+                // Broadcast OFFLINE status (instead of removing, so we know they left)
+                messagingTemplate.convertAndSend("/topic/status", entry);
+                log.info("🔌 User Disconnected: {} (Marked OFFLINE)", userId);
+            }
         }
     }
 

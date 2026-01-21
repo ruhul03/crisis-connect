@@ -10,6 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -74,10 +79,14 @@ public class CrisisConnectController {
     }
 
     // Update user status
-    @PostMapping("/status")
-    public ResponseEntity<StatusEntry> updateStatus(@Valid @RequestBody StatusEntry status) {
-        statusService.updateStatus(status);
-        return ResponseEntity.ok(status);
+    @MessageMapping("/status")
+    @SendTo("/topic/status")
+    public StatusEntry updateStatus(@Payload StatusEntry statusEntry, SimpMessageHeaderAccessor headerAccessor) {
+        statusService.updateStatus(statusEntry);
+        if (headerAccessor != null && headerAccessor.getSessionId() != null) {
+            statusService.registerSession(headerAccessor.getSessionId(), statusEntry.getUserId());
+        }
+        return statusEntry;
     }
 
     // Get all statuses
