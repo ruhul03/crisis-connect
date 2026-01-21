@@ -387,8 +387,8 @@ body {
 
 .message-header {
     display: flex;
-    justify-content: flex-start;
-    /* Keep name and time together */
+    justify-content: flex-end;
+    /* Align name/time to the right */
     margin-bottom: 0.25rem;
     /* Reduce vertical space slightly */
     font-size: 0.75rem;
