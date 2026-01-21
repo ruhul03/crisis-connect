@@ -518,18 +518,51 @@ const app = {
 
                 // Use QRCode global from script
                 if (typeof QRCode !== 'undefined') {
-                    new QRCode(qrContainer, {
-                        text: url,
-                        width: 128,
-                        height: 128
-                    });
+                    try {
+                        new QRCode(qrContainer, {
+                            text: url,
+                            width: 128,
+                            height: 128
+                        });
+                        this.showToast('QR Code Generated', 'success');
+                    } catch (err) {
+                        console.error(err);
+                        qrContainer.innerHTML = 'Error generating QR';
+                        this.showToast('QR Error: ' + err.message, 'error');
+                    }
                 } else {
                     qrContainer.innerHTML = '<div style="padding:20px; border:1px dashed #ccc;">QR Code Library Not Loaded<br>(Download qrcode.min.js)</div>';
+                    this.showToast('QR Library Missing', 'error');
                 }
             })
             .catch(e => {
-                this.showToast('Could not fetch IP. using localhost.', 'warning');
+                this.showToast('Could not fetch IP. Using localhost.', 'warning');
                 console.error(e);
+
+                // Fallback rendering
+                const url = 'http://localhost:8080';
+                const modal = document.getElementById('qrModal');
+                const qrContainer = document.getElementById('qrcode');
+                const urlContainer = document.getElementById('serverUrl');
+
+                qrContainer.innerHTML = '';
+                urlContainer.textContent = url;
+                modal.style.display = 'flex';
+
+                if (typeof QRCode !== 'undefined') {
+                    try {
+                        new QRCode(qrContainer, {
+                            text: url,
+                            width: 128,
+                            height: 128
+                        });
+                        this.showToast('Fallback QR Generated', 'warning');
+                    } catch (err) {
+                        this.showToast('Fallback QR Error: ' + err.message, 'error');
+                    }
+                } else {
+                    this.showToast('QR Library Missing (Fallback)', 'error');
+                }
             });
     }
 };

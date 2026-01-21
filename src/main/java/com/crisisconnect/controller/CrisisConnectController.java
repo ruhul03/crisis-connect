@@ -140,9 +140,16 @@ public class CrisisConnectController {
     @GetMapping("/server-info")
     public ResponseEntity<Map<String, String>> getServerInfo() {
         Map<String, String> info = new HashMap<>();
+        String ipAddress = "127.0.0.1";
+
         try {
-            String ipAddress = InetAddress.getLocalHost().getHostAddress(); // Fallback
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            // We want to find the best candidate. Priority:
+            // 1. 192.168.137.x (Default Windows Hotspot)
+            // 2. 192.168.x.x (Standard Home Wi-Fi)
+            // 3. 10.x.x.x / 172.x.x.x (Enterprise)
+            String bestCandidate = null;
+
             while (interfaces.hasMoreElements()) {
                 NetworkInterface iface = interfaces.nextElement();
                 if (iface.isLoopback() || !iface.isUp())
@@ -151,21 +158,37 @@ public class CrisisConnectController {
                 Enumeration<InetAddress> addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
                     InetAddress addr = addresses.nextElement();
-                    // Prefer site-local (192.168...) but accept others if not loopback
-                    if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && addr.getAddress().length == 4) {
-                        ipAddress = addr.getHostAddress();
-                        // If it's site local, it's likely the one we want (Wi-Fi), so break
-                        if (addr.isSiteLocalAddress())
-                            break;
+                    if (addr.isLinkLocalAddress() || addr.isLoopbackAddress() || addr.getAddress().length != 4)
+                        continue;
+
+                    String ip = addr.getHostAddress();
+                    if (ip.startsWith("192.168.137.")) {
+                        bestCandidate = ip; // Highest priority
+                        break;
+                    }
+                    if (ip.startsWith("192.168.") && bestCandidate == null) {
+                        bestCandidate = ip;
+                    }
+                    if (bestCandidate == null) {
+                        bestCandidate = ip; // Keep any valid IPv4 as backup
                     }
                 }
+                if (bestCandidate != null && bestCandidate.startsWith("192.168.137."))
+                    break;
             }
+
+            if (bestCandidate != null)
+                ipAddress = bestCandidate;
+
             info.put("ip", ipAddress);
             info.put("port", "8080");
             info.put("url", "http://" + ipAddress + ":8080");
+            log.info("Detected Server IP: {}", ipAddress);
+
         } catch (Exception e) {
             info.put("error", "Could not determine IP");
             info.put("ip", "127.0.0.1");
+            log.error("IP Detection Failed", e);
         }
         return ResponseEntity.ok(info);
     }
