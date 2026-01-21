@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 
 @RestController
 @RequestMapping("/api")
@@ -132,5 +135,38 @@ public class CrisisConnectController {
     public ResponseEntity<Void> clearMessages() {
         broadcastService.clearHistory();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/server-info")
+    public ResponseEntity<Map<String, String>> getServerInfo() {
+        Map<String, String> info = new HashMap<>();
+        try {
+            String ipAddress = InetAddress.getLocalHost().getHostAddress(); // Fallback
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                if (iface.isLoopback() || !iface.isUp())
+                    continue;
+
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+                    // Prefer site-local (192.168...) but accept others if not loopback
+                    if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && addr.getAddress().length == 4) {
+                        ipAddress = addr.getHostAddress();
+                        // If it's site local, it's likely the one we want (Wi-Fi), so break
+                        if (addr.isSiteLocalAddress())
+                            break;
+                    }
+                }
+            }
+            info.put("ip", ipAddress);
+            info.put("port", "8080");
+            info.put("url", "http://" + ipAddress + ":8080");
+        } catch (Exception e) {
+            info.put("error", "Could not determine IP");
+            info.put("ip", "127.0.0.1");
+        }
+        return ResponseEntity.ok(info);
     }
 }

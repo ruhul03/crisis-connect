@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     
     <!-- App Styles -->
+    <!-- QRCode Lib (CDN - requires internet once, or download local) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -41,6 +43,7 @@
             </div>
 
             <div class="header-controls" style="display: flex; gap: 1rem; align-items: center;">
+                <button id="btnShowQR" class="btn btn-sm" style="background: var(--accent-color); color: white; display: none;"><i class="ph-bold ph-qr-code"></i> Connect Devices</button>
                 <button id="btnConnect" class="btn btn-sm" style="display: none;"><i class="ph-bold ph-plug"></i> Connect</button>
                 <button id="btnDisconnect" class="btn btn-sm btn-danger" style="display: none;"><i class="ph-bold ph-plugs"></i> Disconnect</button>
                 <div class="connection-badge disconnected" id="connectionStatus">
@@ -113,6 +116,19 @@
                 <button id="btnCancelLoc" class="btn btn-sm" style="background: transparent; border: 1px solid var(--glass-border);">Cancel</button>
                 <button id="btnConfirmLoc" class="btn btn-sm">Share Location</button>
             </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal" style="display: none;">
+        <div class="modal-content card" style="text-align: center; max-width: 350px;">
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 1.5rem;">Scan to Connect</h3>
+            <div id="qrcode" style="display: flex; justify-content: center; margin-bottom: 1.5rem; padding: 10px; background: white; border-radius: 8px;"></div>
+            <div id="serverUrl" style="font-family: monospace; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--accent-color);"></div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Connect to the <strong>Host Wi-Fi</strong> first,<br>then scan this code or type the URL.
+            </p>
+            <button id="btnCloseQR" class="btn btn-sm" style="width: 100%;">Close</button>
         </div>
     </div>
 

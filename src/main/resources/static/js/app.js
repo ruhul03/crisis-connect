@@ -23,6 +23,9 @@ const app = {
             this.dom.nameInput.value = storedName;
         }
 
+        // Show QR Button always
+        try { document.getElementById('btnShowQR').style.display = 'block'; } catch (e) { }
+
         this.bindEvents();
         this.connect();
 
@@ -56,7 +59,14 @@ const app = {
         this.dom.statusSelect.addEventListener('change', () => this.updateMyStatus());
         this.dom.btnConnect.addEventListener('click', () => this.connect());
         this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
+        this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
         document.getElementById('btnShareLoc').addEventListener('click', () => this.shareLocation());
+
+        // QR Events
+        document.getElementById('btnShowQR').addEventListener('click', () => this.showQRCode());
+        document.getElementById('btnCloseQR').addEventListener('click', () => {
+            document.getElementById('qrModal').style.display = 'none';
+        });
 
         // Modal Events
         document.getElementById('btnConfirmLoc').addEventListener('click', () => this.confirmShareLocation());
@@ -490,6 +500,37 @@ const app = {
         toast.textContent = msg;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    },
+
+    showQRCode() {
+        // Fetch server info
+        fetch('/api/server-info')
+            .then(r => r.json())
+            .then(data => {
+                const url = data.url || 'http://localhost:8080';
+                const modal = document.getElementById('qrModal');
+                const qrContainer = document.getElementById('qrcode');
+                const urlContainer = document.getElementById('serverUrl');
+
+                qrContainer.innerHTML = ''; // Clear previous
+                urlContainer.textContent = url;
+                modal.style.display = 'flex';
+
+                // Use QRCode global from script
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: url,
+                        width: 128,
+                        height: 128
+                    });
+                } else {
+                    qrContainer.innerHTML = '<div style="padding:20px; border:1px dashed #ccc;">QR Code Library Not Loaded<br>(Download qrcode.min.js)</div>';
+                }
+            })
+            .catch(e => {
+                this.showToast('Could not fetch IP. using localhost.', 'warning');
+                console.error(e);
+            });
     }
 };
 
