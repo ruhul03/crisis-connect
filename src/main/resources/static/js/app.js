@@ -2,6 +2,7 @@ const app = {
     stompClient: null,
     userId: null,
     userName: '',
+    messageQueue: JSON.parse(localStorage.getItem('crisis_message_queue') || '[]'),
 
     init() {
         this.userId = this.generateUUID();
@@ -50,6 +51,7 @@ const app = {
             if (!this.stompClient || !this.stompClient.connected) {
                 this.connect();
             }
+            this.processQueue();
         });
 
         window.addEventListener('offline', () => {
@@ -168,27 +170,7 @@ const app = {
         this.post('/api/status', statusEntry);
     },
 
-    displayMessage(msg) {
-        const div = document.createElement('div');
-        div.className = `message-bubble ${msg.type.toLowerCase()}`;
 
-        const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        div.innerHTML = `
-            <div class="message-header">
-                <span class="sender-name">${msg.senderName}</span>
-                <span class="msg-time">${time}</span>
-            </div>
-            <div class="message-content">${msg.content}</div>
-        `;
-
-        this.dom.messagesContainer.appendChild(div);
-        this.scrollToBottom();
-
-        // Update local count
-        const currentCount = parseInt(this.dom.stats.messages.textContent) || 0;
-        this.dom.stats.messages.textContent = currentCount + 1;
-    },
 
     updateStatusBoard(entry) {
         let item = document.getElementById(`status-${entry.userId}`);
@@ -232,9 +214,41 @@ const app = {
         }).catch(() => { });
     },
 
+    processQueue() {
+        if (!this.messageQueue.length) return;
+
+        this.showToast(`Syncing ${this.messageQueue.length} offline messages...`, 'info');
+
+        const queueBackup = [...this.messageQueue];
+        this.messageQueue = []; // Clear main queue to avoid double sends
+        localStorage.setItem('crisis_message_queue', JSON.stringify([]));
+
+        queueBackup.forEach(item => {
+            this.post(item.url, item.data).catch(() => {
+                // If it fails again, put it back
+                this.messageQueue.push(item);
+                localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
+            });
+        });
+    },
+
     post(url, data) {
         // Handle absolute vs relative URL
         const fullUrl = url.startsWith('http') ? url : `http://localhost:8080${url}`;
+
+        // If offline, queue it
+        if (!navigator.onLine) {
+            this.messageQueue.push({ url, data });
+            localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
+            this.showToast('Message queued (Offline)', 'warning');
+
+            // Optimistically show message in chat if it's a message
+            if (url.includes('/messages')) {
+                const offlineMsg = { ...data, timestamp: new Date().toISOString() };
+                this.displayMessage(offlineMsg, true);
+            }
+            return Promise.resolve(); // Fake success
+        }
 
         return fetch(fullUrl, {
             method: 'POST',
@@ -242,8 +256,35 @@ const app = {
             body: JSON.stringify(data)
         }).catch(err => {
             console.error('API Error:', err);
-            this.showToast('Failed to send data (Server may be offline)', 'error');
+            // Fallback for network errors even if navigator says online
+            this.messageQueue.push({ url, data });
+            localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
+            this.showToast('Network error. Message queued.', 'warning');
         });
+    },
+
+    displayMessage(msg, isOffline = false) {
+        const div = document.createElement('div');
+        div.className = `message-bubble ${msg.type.toLowerCase()}`;
+        if (isOffline) div.style.opacity = '0.7';
+
+        const time = new Date(msg.timestamp || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const offlineLabel = isOffline ? ' <span style="font-size:0.8em">🕒 (Pending)</span>' : '';
+
+        div.innerHTML = `
+            <div class="message-header">
+                <span class="sender-name">${msg.senderName}</span>
+                <span class="msg-time">${time}${offlineLabel}</span>
+            </div>
+            <div class="message-content">${msg.content}</div>
+        `;
+
+        this.dom.messagesContainer.appendChild(div);
+        this.scrollToBottom();
+
+        // Update local count
+        const currentCount = parseInt(this.dom.stats.messages.textContent) || 0;
+        this.dom.stats.messages.textContent = currentCount + 1;
     },
 
     scrollToBottom() {
@@ -254,7 +295,7 @@ const app = {
         const toast = document.createElement('div');
         toast.style.cssText = `
             position: fixed; top: 20px; right: 20px; padding: 1rem 2rem;
-            background: ${type === 'error' ? '#ef4444' : '#3b82f6'};
+            background: ${type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#3b82f6')};
             color: white; border-radius: 8px; z-index: 1000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: fadeIn 0.3s;
         `;
