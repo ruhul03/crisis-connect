@@ -538,10 +538,20 @@ body {
 
     .app-header {
         flex-shrink: 0;
-        padding: 0.75rem;
-        padding-top: max(0.75rem, env(safe-area-inset-top));
+        padding: 0.5rem;
+        padding-top: max(0.5rem, env(safe-area-inset-top));
         /* Handle notch */
         gap: 0.5rem;
+        justify-content: space-between;
+    }
+
+    .logo-text {
+        font-size: 1rem;
+        /* Smaller logo text */
+    }
+
+    .logo-icon {
+        font-size: 1.2rem;
     }
 
     .header-stats {
@@ -550,8 +560,38 @@ body {
     }
 
     .header-controls {
-        flex: 1;
+        flex: 0 1 auto;
         justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    /* ICON ONLY MODE: Hide text in all header buttons and badge on mobile */
+    .header-controls .btn,
+    .header-controls .connection-badge {
+        font-size: 0 !important;
+        /* Hide text */
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .header-controls .btn i {
+        font-size: 1.2rem;
+        /* Keep icon visible */
+    }
+
+    .header-controls .connection-badge .indicator {
+        margin: 0;
+        /* Remove margin since no text */
+        width: 10px;
+        height: 10px;
+    }
+
+    /* Ensure only the indicator is visible for badge */
+    .header-controls .connection-badge {
+        width: auto;
+        padding: 0.5rem;
     }
 
     /* Hide Sidebar by default on mobile (shown via tab) */
