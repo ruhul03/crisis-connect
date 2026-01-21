@@ -1,0 +1,82 @@
+/* Offline Icon Replacements using Emojis */
+
+/* Base class for icons to ensure they behave like text icons */
+i[class^="ph-"] {
+    font-style: normal;
+    display: inline-block;
+    text-align: center;
+    width: 1.2em;
+    line-height: 1;
+    font-variant: emoji;
+    text-decoration: none !important;
+}
+
+/* Mapping Phosphor classes to Emojis */
+.ph-siren::before {
+    content: "🚨";
+}
+
+.ph-users-three::before {
+    content: "👥";
+}
+
+.ph-chat-centered-text::before {
+    content: "💬";
+}
+
+.ph-warning-circle::before {
+    content: "⚠️";
+}
+
+.ph-qr-code::before {
+    content: "📱";
+}
+
+.ph-plug::before {
+    content: "🔌";
+}
+
+.ph-plugs::before {
+    content: "🔋";
+}
+
+.ph-user-focus::before {
+    content: "👤";
+}
+
+.ph-broadcast::before {
+    content: "📡";
+}
+
+.ph-chat-circle-dots::before {
+    content: "💭";
+}
+
+.ph-user::before {
+    content: "👤";
+}
+
+.ph-paper-plane-right::before {
+    content: "📤";
+}
+
+.ph-map-pin::before {
+    content: "📍";
+}
+
+.ph-arrow-right::before {
+    content: "➡️";
+}
+
+.ph-warning::before {
+    content: "🆘";
+}
+
+/* Utility adjustments */
+.btn i[class^="ph-"] {
+    margin-right: 0.5rem;
+}
+
+.btn.btn-icon i[class^="ph-"] {
+    margin-right: 0;
+}
