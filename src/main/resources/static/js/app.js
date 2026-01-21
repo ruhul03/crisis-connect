@@ -124,6 +124,13 @@ const app = {
             this.setConnectionStatus(false);
         });
 
+        // Clean up on tab close
+        window.addEventListener('beforeunload', () => {
+            if (this.stompClient) {
+                this.disconnect();
+            }
+        });
+
         // Identity Modal Events
         const btnJoin = document.getElementById('btnJoin');
         const nameInput = document.getElementById('modalNameInput');
@@ -406,6 +413,7 @@ const app = {
         let statusClass = '';
         if (entry.status === 'CRITICAL') statusClass = 'critical';
         if (entry.status === 'NEED_HELP') statusClass = 'help';
+        if (entry.status === 'OFFLINE') statusClass = 'offline';
 
         const locationBadge = (entry.latitude && entry.longitude)
             ? `<a href="https://www.google.com/maps?q=${entry.latitude},${entry.longitude}" target="_blank" title="View Location" style="color: var(--accent-color); margin-left: auto;">
@@ -414,12 +422,17 @@ const app = {
             : '';
 
         item.className = `status-card ${statusClass}`;
+        // Dim offline users
+        item.style.opacity = (entry.status === 'OFFLINE') ? '0.5' : '1';
+
+        const displayStatus = (entry.status === 'OFFLINE') ? 'Offline' : (entry.message || entry.status);
+
         item.innerHTML = `
             <div style="display:flex; align-items:center; justify-content:space-between;">
                 <div class="status-user-name">${entry.userName}</div>
                 ${locationBadge}
             </div>
-            <div class="status-user-msg">${entry.message || entry.status}</div>
+            <div class="status-user-msg">${displayStatus}</div>
         `;
     },
 
