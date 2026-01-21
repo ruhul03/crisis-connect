@@ -52,21 +52,29 @@ public class StatusService {
             messagingTemplate.convertAndSend("/topic/status/removed", userId);
             log.info("Status removed for user: {}", userId);
         }
-        sessionToUserMap.values().remove(userId);
+        // Remove ALL sessions associated with this user
+        sessionToUserMap.values().removeIf(id -> id.equals(userId));
     }
 
     public void handleDisconnect(String sessionId) {
         String userId = sessionToUserMap.remove(sessionId);
         if (userId != null) {
-            StatusEntry entry = statusBoard.get(userId);
-            if (entry != null) {
-                entry.setStatus("OFFLINE");
-                entry.setTimestamp(LocalDateTime.now());
-                statusBoard.put(userId, entry);
+            // Only mark as OFFLINE if no other sessions exist for this user
+            boolean hasOtherSessions = sessionToUserMap.containsValue(userId);
 
-                // Broadcast OFFLINE status (instead of removing, so we know they left)
-                messagingTemplate.convertAndSend("/topic/status", entry);
-                log.info("🔌 User Disconnected: {} (Marked OFFLINE)", userId);
+            if (!hasOtherSessions) {
+                StatusEntry entry = statusBoard.get(userId);
+                if (entry != null) {
+                    entry.setStatus("OFFLINE");
+                    entry.setTimestamp(LocalDateTime.now());
+                    statusBoard.put(userId, entry);
+
+                    // Broadcast OFFLINE status
+                    messagingTemplate.convertAndSend("/topic/status", entry);
+                    log.info("🔌 User Disconnected: {} (Marked OFFLINE)", userId);
+                }
+            } else {
+                log.debug("User {} disconnected session {}, but remains active on other sessions", userId, sessionId);
             }
         }
     }
