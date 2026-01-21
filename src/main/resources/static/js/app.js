@@ -447,7 +447,7 @@ const app = {
             </div>
             <div class="message-content">
                 ${msg.type === 'LOCATION' && msg.latitude ?
-                `<a href="https://www.google.com/maps?q=${msg.latitude},${msg.longitude}" target="_blank" style="color: var(--accent-color); text-decoration: underline;">
+                `<a href="https://www.google.com/maps?q=${msg.latitude},${msg.longitude}" target="_blank" style="color: ${isMe ? 'white' : 'var(--accent-color)'}; text-decoration: underline;">
                      <i class="ph-bold ph-map-pin"></i> View on Map
                    </a><br>` : ''}
                 ${msg.content}
