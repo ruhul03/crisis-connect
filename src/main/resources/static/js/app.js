@@ -572,30 +572,34 @@ const app = {
         // Use relative URL to allow connection from any host (localhost, LAN IP, etc.)
         const fullUrl = url;
 
-        // If offline, queue it
-        if (!navigator.onLine) {
+        // "Offline-First" for Local Network:
+        // Always try to fetch first. Only queue if the network request actually fails.
+        // This handles cases where device has Wi-Fi (LAN) but no Internet (WAN), 
+        // where navigator.onLine might be misleading or irrelevant for our local server.
+
+        return fetch(fullUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            return response.json();
+        }).catch(err => {
+            console.warn('Network request failed, queuing message:', err);
+
+            // Queue the message
             this.messageQueue.push({ url, data });
             localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
-            this.showToast('Message queued (Offline)', 'warning');
+
+            this.showToast('Network unreachable. Message queued.', 'warning');
 
             // Optimistically show message in chat if it's a message
             if (url.includes('/messages')) {
                 const offlineMsg = { ...data, timestamp: new Date().toISOString() };
                 this.displayMessage(offlineMsg, true);
             }
-            return Promise.resolve(); // Fake success
-        }
-
-        return fetch(fullUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).catch(err => {
-            console.error('API Error:', err);
-            // Fallback for network errors even if navigator says online
-            this.messageQueue.push({ url, data });
-            localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
-            this.showToast('Network error. Message queued.', 'warning');
         });
     },
 
