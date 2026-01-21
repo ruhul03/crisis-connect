@@ -418,8 +418,8 @@ const app = {
     },
 
     post(url, data) {
-        // Handle absolute vs relative URL
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:8080${url}`;
+        // Use relative URL to allow connection from any host (localhost, LAN IP, etc.)
+        const fullUrl = url;
 
         // If offline, queue it
         if (!navigator.onLine) {
