@@ -38,6 +38,18 @@ public class CrisisConnectController {
         message.setId(UUID.randomUUID().toString());
         message.setTimestamp(LocalDateTime.now());
 
+        // Auto-register user status if not exists (for active unit counting)
+        if (statusService.getStatus(message.getSenderId()) == null) {
+            StatusEntry newStatus = new StatusEntry();
+            newStatus.setUserId(message.getSenderId());
+            newStatus.setUserName(message.getSenderName());
+            newStatus.setStatus("SAFE"); // Default status
+            newStatus.setMessage("Joined via messaging");
+            newStatus.setTimestamp(LocalDateTime.now());
+            newStatus.setHasInternet(true);
+            statusService.updateStatus(newStatus);
+        }
+
         broadcastService.broadcastMessage(message);
         socketServerService.broadcastMessage(message);
 
