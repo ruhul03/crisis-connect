@@ -61,7 +61,6 @@ const app = {
             statusBadge: document.getElementById('connectionStatus'),
             messagesContainer: document.getElementById('messagesContainer'),
             statusList: document.getElementById('statusList'),
-            statusList: document.getElementById('statusList'),
             messageInput: document.getElementById('messageInput'),
             nameInput: document.getElementById('userNameInput'),
             btnSend: document.getElementById('btnSend'),
@@ -82,7 +81,6 @@ const app = {
         this.dom.btnSOS.addEventListener('click', () => this.sendEmergency());
         this.dom.statusSelect.addEventListener('change', () => this.updateMyStatus());
         this.dom.btnConnect.addEventListener('click', () => this.connect());
-        this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
         this.dom.btnDisconnect.addEventListener('click', () => this.disconnect());
         document.getElementById('btnShareLoc').addEventListener('click', () => this.shareLocation());
 
