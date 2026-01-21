@@ -62,6 +62,19 @@ public class MessageBroadcastService {
     public void clearHistory() {
         messageHistory.clear();
         fileStorageService.saveMessages(new ArrayList<>()); // Clear file too
-        log.info("Message history cleared");
+
+        // Notify clients to clear their views
+        Message clearMsg = new Message();
+        clearMsg.setId(java.util.UUID.randomUUID().toString());
+        clearMsg.setSenderId("SYSTEM");
+        clearMsg.setSenderName("System");
+        clearMsg.setContent("CLEAR_HISTORY");
+        clearMsg.setType(Message.MessageType.SYSTEM);
+        clearMsg.setPriority(Message.MessagePriority.NORMAL);
+        clearMsg.setTimestamp(java.time.LocalDateTime.now());
+
+        messagingTemplate.convertAndSend("/topic/messages", clearMsg);
+
+        log.info("Message history cleared and clients notified");
     }
 }

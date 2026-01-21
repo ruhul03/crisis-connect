@@ -28,8 +28,11 @@ const app = {
             this.showToast(`Welcome back, ${this.userName}`, 'info');
         }
 
-        // Show QR Button always
-        try { document.getElementById('btnShowQR').style.display = 'block'; } catch (e) { }
+        // Show QR and Clear Buttons always
+        try {
+            document.getElementById('btnShowQR').style.display = 'block';
+            document.getElementById('btnClearChat').style.display = 'block';
+        } catch (e) { }
 
         this.bindEvents();
 
@@ -67,9 +70,11 @@ const app = {
             statusList: document.getElementById('statusList'),
             messageInput: document.getElementById('messageInput'),
             nameInput: document.getElementById('userNameInput'),
+
             btnSend: document.getElementById('btnSend'),
             btnSOS: document.getElementById('btnSOS'),
             btnConnect: document.getElementById('btnConnect'),
+            btnClearChat: document.getElementById('btnClearChat'),
             btnDisconnect: document.getElementById('btnDisconnect'),
             statusSelect: document.getElementById('myStatus'),
             stats: {
@@ -90,6 +95,13 @@ const app = {
 
         // QR Events
         document.getElementById('btnShowQR').addEventListener('click', () => this.showQRCode());
+        if (this.dom.btnClearChat) {
+            this.dom.btnClearChat.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear chat history for all users?')) {
+                    this.requestClearHistory();
+                }
+            });
+        }
         document.getElementById('btnCloseQR').addEventListener('click', () => {
             document.getElementById('qrModal').style.display = 'none';
         });
@@ -186,7 +198,13 @@ const app = {
 
             // Subscriptions
             this.stompClient.subscribe('/topic/messages', (message) => {
-                this.displayMessage(JSON.parse(message.body));
+                const msg = JSON.parse(message.body);
+                if (msg.type === 'SYSTEM' && msg.content === 'CLEAR_HISTORY') {
+                    this.clearDOMMessages();
+                    this.showToast('Chat history cleared', 'info');
+                } else {
+                    this.displayMessage(msg);
+                }
             });
 
             this.stompClient.subscribe('/topic/status', (status) => {
@@ -601,6 +619,37 @@ const app = {
                 this.displayMessage(offlineMsg, true);
             }
         });
+    },
+
+    requestClearHistory() {
+        if (!this.userId) {
+            this.showToast('You must be connected to clear history', 'error');
+            return;
+        }
+
+        fetch('/api/messages', {
+            method: 'DELETE'
+        }).then(response => {
+            if (response.ok) {
+                // Success - wait for WebSocket broadcast
+            } else {
+                this.showToast('Failed to clear history', 'error');
+            }
+        }).catch(err => {
+            console.error('Error clearing history:', err);
+            this.showToast('Error clearing history', 'error');
+        });
+    },
+
+    clearDOMMessages() {
+        this.dom.messagesContainer.innerHTML = '';
+        this.dom.messagesContainer.innerHTML = `
+            <div class="empty-state" style="margin: auto; text-align: center; color: var(--text-secondary); opacity: 0.5;">
+                <i class="ph-duotone ph-chat-circle-dots" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                <p>No messages yet. Start the conversation.</p>
+            </div>
+        `;
+        this.dom.stats.messages.textContent = '0';
     },
 
     displayMessage(msg, isOffline = false) {

@@ -72,6 +72,10 @@ i[class^="ph-"] {
     content: "🆘";
 }
 
+.ph-trash::before {
+    content: "🗑️";
+}
+
 /* Utility adjustments */
 .btn i[class^="ph-"] {
     margin-right: 0.5rem;
