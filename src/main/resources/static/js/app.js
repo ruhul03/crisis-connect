@@ -164,6 +164,14 @@ const app = {
         }
     },
 
+    checkConnection() {
+        if (!this.stompClient || !this.stompClient.connected) {
+            this.showToast('Device is disconnected. Please connect first.', 'error');
+            return false;
+        }
+        return true;
+    },
+
     validateUser() {
         const name = this.dom.nameInput.value.trim();
         if (!name) {
@@ -173,7 +181,8 @@ const app = {
         }
         this.userName = name;
         localStorage.setItem('crisis_user_name', name);
-        return true;
+
+        return this.checkConnection();
     },
 
     sendMessage() {
@@ -224,6 +233,8 @@ const app = {
     },
 
     confirmShareLocation() {
+        if (!this.checkConnection()) return;
+
         const modal = document.getElementById('locationModal');
         const input = document.getElementById('manualLocationInput');
         const manualText = input.value.trim();
