@@ -482,7 +482,7 @@ const app = {
     showToast(msg, type = 'info') {
         const toast = document.createElement('div');
         toast.style.cssText = `
-            position: fixed; top: 20px; right: 20px; padding: 1rem 2rem;
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 1rem 2rem;
             background: ${type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#3b82f6')};
             color: white; border-radius: 8px; z-index: 1000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: fadeIn 0.3s;
