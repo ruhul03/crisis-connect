@@ -435,7 +435,7 @@ const app = {
     },
 
     loadHistory() {
-        const baseUrl = 'http://localhost:8080';
+        const baseUrl = '';
         fetch(`${baseUrl}/api/messages`).then(r => r.json()).then(msgs => {
             // Remove empty state if messages exist
             if (msgs.length > 0) {
@@ -455,7 +455,7 @@ const app = {
     },
 
     updateStats() {
-        fetch('http://localhost:8080/api/stats').then(r => r.json()).then(data => {
+        fetch('/api/stats').then(r => r.json()).then(data => {
             this.dom.stats.users.textContent = data.activeUsers;
             this.dom.stats.messages.textContent = data.totalMessages;
             this.dom.stats.critical.textContent = data.criticalUsers;

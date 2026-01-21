@@ -88,6 +88,13 @@ public class CrisisConnectController {
         return statusEntry;
     }
 
+    // Update user status via REST
+    @PostMapping("/status")
+    public ResponseEntity<StatusEntry> updateStatusRest(@RequestBody StatusEntry statusEntry) {
+        statusService.updateStatus(statusEntry);
+        return ResponseEntity.ok(statusEntry);
+    }
+
     // Get all statuses
     @GetMapping("/status")
     public ResponseEntity<List<StatusEntry>> getAllStatuses() {
