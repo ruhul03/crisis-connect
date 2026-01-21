@@ -42,6 +42,20 @@ const app = {
                 this.sendMessage();
             }
         });
+
+        // Network Status Listeners
+        window.addEventListener('online', () => {
+            this.showToast('Network connected. Reconnecting services...', 'info');
+            this.setConnectionStatus(true); // Optimistic update
+            if (!this.stompClient || !this.stompClient.connected) {
+                this.connect();
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            this.showToast('Network disconnected. You are offline.', 'error');
+            this.setConnectionStatus(false);
+        });
     },
 
     generateUUID() {
@@ -53,7 +67,8 @@ const app = {
     },
 
     connect() {
-        const socket = new SockJS('/ws-crisis');
+        // Use absolute URL to allow running from file:// for demo purposes
+        const socket = new SockJS('http://localhost:8080/ws-crisis');
         this.stompClient = Stomp.over(socket);
         this.stompClient.debug = null; // Disable debug logs for cleaner console
 
@@ -196,12 +211,13 @@ const app = {
     },
 
     loadHistory() {
-        fetch('/api/messages').then(r => r.json()).then(msgs => {
+        const baseUrl = 'http://localhost:8080';
+        fetch(`${baseUrl}/api/messages`).then(r => r.json()).then(msgs => {
             this.dom.messagesContainer.innerHTML = ''; // Clear existing
             msgs.forEach(m => this.displayMessage(m));
-        });
+        }).catch(e => console.error('Error loading history:', e));
 
-        fetch('/api/status').then(r => r.json()).then(statuses => {
+        fetch(`${baseUrl}/api/status`).then(r => r.json()).then(statuses => {
             statuses.forEach(s => this.updateStatusBoard(s));
         });
 
@@ -209,21 +225,24 @@ const app = {
     },
 
     updateStats() {
-        fetch('/api/stats').then(r => r.json()).then(data => {
+        fetch('http://localhost:8080/api/stats').then(r => r.json()).then(data => {
             this.dom.stats.users.textContent = data.activeUsers;
             this.dom.stats.messages.textContent = data.totalMessages;
             this.dom.stats.critical.textContent = data.criticalUsers;
-        });
+        }).catch(() => { });
     },
 
     post(url, data) {
-        return fetch(url, {
+        // Handle absolute vs relative URL
+        const fullUrl = url.startsWith('http') ? url : `http://localhost:8080${url}`;
+
+        return fetch(fullUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).catch(err => {
             console.error('API Error:', err);
-            this.showToast('Failed to send data', 'error');
+            this.showToast('Failed to send data (Server may be offline)', 'error');
         });
     },
 

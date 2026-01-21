@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*")
 @Slf4j
 public class CrisisConnectController {
 
