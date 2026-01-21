@@ -297,7 +297,9 @@ const app = {
 
     displayMessage(msg, isOffline = false) {
         const div = document.createElement('div');
-        div.className = `message-bubble ${msg.type.toLowerCase()}`;
+        const isMe = msg.senderId === this.userId;
+
+        div.className = `message-bubble ${msg.type.toLowerCase()} ${isMe ? 'is-me' : ''}`;
         if (isOffline) div.style.opacity = '0.7';
 
         const time = new Date(msg.timestamp || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
