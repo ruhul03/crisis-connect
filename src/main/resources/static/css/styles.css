@@ -72,10 +72,15 @@ body {
 .header-stats {
     display: flex;
     gap: 2rem;
+    align-items: center;
+    /* Ensure vertical alignment */
 }
 
 .stat-item {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .stat-value {
@@ -90,6 +95,8 @@ body {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    /* Prevent "Active Units" from breaking */
 }
 
 /* Sidebar */
@@ -155,8 +162,13 @@ body {
     background-color: rgba(15, 23, 42, 0.8);
 }
 
-.status-card.critical { border-left-color: var(--danger-color); }
-.status-card.help { border-left-color: var(--warning-color); }
+.status-card.critical {
+    border-left-color: var(--danger-color);
+}
+
+.status-card.help {
+    border-left-color: var(--warning-color);
+}
 
 .status-user-name {
     font-weight: 600;
@@ -199,8 +211,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .message-bubble.emergency {
@@ -318,9 +337,17 @@ body {
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Scrollbar */
