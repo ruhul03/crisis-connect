@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class CrisisConnectController {
 
     // Send a new message
     @PostMapping("/messages")
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<Message> sendMessage(@Valid @RequestBody Message message) {
         message.setId(UUID.randomUUID().toString());
         message.setTimestamp(LocalDateTime.now());
 
@@ -59,7 +60,7 @@ public class CrisisConnectController {
 
     // Update user status
     @PostMapping("/status")
-    public ResponseEntity<StatusEntry> updateStatus(@RequestBody StatusEntry status) {
+    public ResponseEntity<StatusEntry> updateStatus(@Valid @RequestBody StatusEntry status) {
         statusService.updateStatus(status);
         return ResponseEntity.ok(status);
     }
