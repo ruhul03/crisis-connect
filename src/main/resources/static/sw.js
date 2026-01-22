@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crisis-connect-v1';
+const CACHE_NAME = 'crisis-connect-v2';
 const ASSETS = [
     '/',
     '/index.html',

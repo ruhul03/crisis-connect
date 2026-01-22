@@ -311,8 +311,9 @@ const app = {
         }
 
         // Tell backend to remove us
+        // Suppress error toast if we are offline, as we are disconnecting anyway
         if (this.userId) {
-            this.post('/api/disconnect', { userId: this.userId });
+            this.post('/api/disconnect', { userId: this.userId }, { queue: false, showErrorToast: false });
         }
     },
 
@@ -598,7 +599,11 @@ const app = {
         });
     },
 
-    post(url, data) {
+    post(url, data, options = {}) {
+        // Options defaults
+        const queueOnError = options.queue !== undefined ? options.queue : true;
+        const showErrorToast = options.showErrorToast !== undefined ? options.showErrorToast : true;
+
         // Use relative URL to allow connection from any host (localhost, LAN IP, etc.)
         const fullUrl = url;
 
@@ -617,19 +622,26 @@ const app = {
             }
             return response.json();
         }).catch(err => {
-            console.warn('Network request failed, queuing message:', err);
+            console.warn('Network request failed:', err);
 
-            // Queue the message
-            this.messageQueue.push({ url, data });
-            localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
+            if (queueOnError) {
+                // Queue the message
+                this.messageQueue.push({ url, data });
+                localStorage.setItem('crisis_message_queue', JSON.stringify(this.messageQueue));
+            }
 
-            // Optimistically show message in chat if it's a message
-            if (url.includes('/messages')) {
-                const offlineMsg = { ...data, timestamp: new Date().toISOString() };
-                this.displayMessage(offlineMsg, true);
-                // Suppress annoying toast for messages since we show optimistic UI
+            if (showErrorToast) {
+                // Optimistically show message in chat if it's a message
+                if (url.includes('/messages')) {
+                    const offlineMsg = { ...data, timestamp: new Date().toISOString() };
+                    this.displayMessage(offlineMsg, true);
+                    // Suppress annoying toast for messages since we show optimistic UI
+                } else {
+                    this.showToast('Connection failed (Action queued)', 'warning');
+                }
             } else {
-                this.showToast('Network unreachable. Action queued.', 'warning');
+                // Log silent failure if desired
+                console.log('Action failed silently (no queue, no toast)', url);
             }
         });
     },
