@@ -8,6 +8,12 @@
 5. [Threading Model](#threading-model)
 6. [Error Handling](#error-handling)
 7. [State Management](#state-management)
+8. [Performance Characteristics](#performance-characteristics)
+9. [Design Patterns](#design-patterns)
+10. [Database Schema](#database-schema)
+11. [Configuration Properties](#configuration-properties)
+12. [Frontend Architecture](#frontend-architecture)
+13. [PWA & Offline Strategy](#pwa--offline-strategy)
 
 ---
 
@@ -930,6 +936,97 @@ spring.websocket.servlet.allowed-origins=*
 
 # Message History
 crisis.message.history.max-size=1000
+```
+
+---
+
+## 12. Frontend Architecture
+
+### 12.1 View Layer (HTML/DOM)
+- **Single Page Application (SPA)** approach using vanilla HTML/JS.
+- **Dynamic DOM Manipulation**: `app.js` updates `messagesContainer` and `statusList` directly.
+- **Components**:
+  - `messagesContainer`: Chat bubble stream.
+  - `statusList`: Grid of user status cards.
+  - `connectionStatus`: Indicator for Offline/Online state.
+  - `reconnectBanner`: Visible overlay during reconnection attempts.
+
+### 12.2 Controller Layer (`app.js`)
+The `app` object acts as the central controller:
+- **`init()`**: Bootstraps the app, restores identity from LocalStorage.
+- **`connect()`**: Establishes SockJS/STOMP connection.
+- **`post()`**: Wrapper for `fetch` with offline queueing logic.
+- **`displayMessage()`**: Renders incoming and queued messages.
+- **`processQueue()`**: Syncs offline data when connection is restored.
+
+### 12.3 State Management (Frontend)
+- **Identity**: `localStorage.getItem('crisis_user_id')` (UUID).
+- **Message Queue**: `localStorage.getItem('crisis_message_queue')` (Array of pending requests).
+- **WebSocket Client**: `stompClient` instance (Stateful connection object).
+
+---
+
+## 13. PWA & Offline Strategy
+
+### 13.1 Service Worker (`sw.js`)
+- **Strategy**: Stale-While-Revalidate for static assets.
+- **Cache Name**: `crisis-connect-v2`
+- **Cached Assets**:
+  - `index.html`
+  - `css/styles.css`, `css/offline-icons.css`
+  - `js/app.js`, `js/sockjs.min.js`, `js/stomp.min.js`
+  - `manifest.json`
+- **Behavior**:
+  - **Install**: Pre-caches all critical assets.
+  - **Fetch**: serves from cache immediately, updates in background.
+  - **Bypass**: `/api/*` requests bypass the SW cache (handled by `app.js`).
+
+### 13.2 Offline Queue System
+To support "Offline First" messaging: 
+
+1. **Interception**: `app.post()` wraps all API calls.
+2. **Detection**: If `fetch()` fails (network error), the request is caught.
+3. **Queueing**:
+   ```javascript
+   {
+       url: '/api/messages',
+       data: { ... },
+       timestamp: Date.now()
+   }
+   ```
+   Stored in `localStorage` "crisis_message_queue".
+4. **Optimistic UI**: The message is immediately rendered in the chat with a "pending" opacity/icon so the user feels heard.
+5. **Sync**:
+   - `window.addEventListener('online')` triggers `processQueue()`.
+   - Replays all queued requests sequentially.
+   - Clears queue on success.
+
+### 13.3 Sync Sequence Diagram
+
+```
+User        App (JS)       LocalStorage      ServiceWorker      Server
+ |             |                |                 |               |
+ |--Send Msg-->|                |                 |               |
+ |             |--Fetch(Msg)--->|                 |               |
+ |             |                |                 |               |
+ |      (Network Error)         |                 |               |
+ |             |                |                 |               |
+ |             |--Save Queue--->|                 |               |
+ |             |--Render(Opt)-->|                 |               |
+ |<--[Visible]-|                |                 |               |
+ |             |                |                 |               |
+ |      (Network Restored)      |                 |               |
+ |             |                |                 |               |
+ |<--OnLine----|                |                 |               |
+ |             |--Read Queue--->|                 |               |
+ |             |<--[ReqList]----|                 |               |
+ |             |--Process Loop->|                 |               |
+ |             |                |                 |               |
+ |             |--Fetch(Msg)--------------------->|--POST-------->|
+ |             |                |                 |               |
+ |             |<--200 OK-------------------------|<--200 OK------|
+ |             |--Remove from Queue->             |               |
+ |             |                |                 |               |
 ```
 
 ---
