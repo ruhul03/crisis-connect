@@ -18,6 +18,7 @@ public class StatusEntry {
 
     @NotBlank(message = "Status cannot be empty")
     private String status;
+    private String role;
     private String message;
     private LocalDateTime timestamp;
     private int batteryLevel;

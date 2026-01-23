@@ -12,6 +12,7 @@ public class User {
     private String id;
     private String name;
     private String ipAddress;
+    private String role;
     private UserStatus status;
     private LocalDateTime lastSeen;
     private Location location;

@@ -13,6 +13,19 @@ const app = {
         const storedId = localStorage.getItem('crisis_user_id');
         const storedName = localStorage.getItem('crisis_user_name');
 
+        // Load Settings
+        this.notificationsEnabled = localStorage.getItem('crisis_notifications') === 'true';
+        this.userRole = localStorage.getItem('crisis_user_role') || 'Citizen';
+
+        // Update UI to match settings
+        const toggle = document.getElementById('toggleNotifications');
+        if (toggle) toggle.checked = this.notificationsEnabled;
+
+        const roleSelect = document.getElementById('userRole');
+        if (roleSelect) roleSelect.value = this.userRole;
+
+        document.getElementById('displayUserId').textContent = storedId || 'Not Generated';
+
         if (storedId) {
             this.userId = storedId;
         } else {
@@ -123,6 +136,51 @@ const app = {
                 e.preventDefault();
                 this.sendMessage();
             }
+        });
+
+        // Settings & Profile Events
+        document.getElementById('btnSettings').addEventListener('click', () => {
+            document.getElementById('settingsModal').style.display = 'flex';
+        });
+
+        document.getElementById('btnCloseSettings').addEventListener('click', () => {
+            document.getElementById('settingsModal').style.display = 'none';
+        });
+
+        document.getElementById('toggleNotifications').addEventListener('change', (e) => {
+            this.notificationsEnabled = e.target.checked;
+            localStorage.setItem('crisis_notifications', this.notificationsEnabled);
+            if (this.notificationsEnabled) {
+                this.requestNotificationPermission();
+            }
+        });
+
+        document.getElementById('userRole').addEventListener('change', (e) => {
+            this.userRole = e.target.value;
+            localStorage.setItem('crisis_user_role', this.userRole);
+            this.updateMyStatus(); // Broadcast new role
+        });
+
+        // Quick Replies
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const msg = chip.dataset.msg;
+                if (msg) {
+                    this.dom.messageInput.value = msg;
+                    this.sendMessage();
+                }
+            });
+        });
+
+        // Profile Modal
+        document.getElementById('btnCloseProfile').addEventListener('click', () => {
+            document.getElementById('profileModal').style.display = 'none';
+        });
+
+        document.getElementById('btnMessageProfile').addEventListener('click', () => {
+            // Logic to mention user or focus input (simplified for now)
+            document.getElementById('profileModal').style.display = 'none';
+            this.dom.messageInput.focus();
         });
 
         // Network Status Listeners
@@ -497,10 +555,12 @@ const app = {
         if (!this.validateUser()) return;
 
         const select = this.dom.statusSelect;
+
         const statusEntry = {
             userId: this.userId,
             userName: this.userName,
             status: select.value,
+            role: this.userRole || 'Citizen',
             message: select.options[select.selectedIndex].text,
             hasInternet: navigator.onLine,
             // We don't auto-update location on status change to save battery/privacy,
@@ -544,7 +604,12 @@ const app = {
                 ${locationBadge}
             </div>
             <div class="status-user-msg">${displayStatus}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">${entry.role || 'Citizen'}</div>
         `;
+
+        // Click to view profile
+        item.style.cursor = 'pointer';
+        item.onclick = () => this.openProfile(entry);
     },
 
     loadHistory() {
@@ -712,6 +777,10 @@ const app = {
         // Update local count
         const currentCount = parseInt(this.dom.stats.messages.textContent) || 0;
         this.dom.stats.messages.textContent = currentCount + 1;
+
+        if (!isMe && !isOffline) {
+            this.showSystemNotification(`New Message from ${msg.senderName}`, msg.content);
+        }
     },
 
     scrollToBottom() {
@@ -793,6 +862,38 @@ const app = {
                     this.showToast('QR Library Missing (Fallback)', 'error');
                 }
             });
+    },
+
+    requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            alert('This browser does not support desktop notification');
+            return;
+        }
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+    },
+
+    showSystemNotification(title, body) {
+        if (document.hidden && this.notificationsEnabled && Notification.permission === 'granted') {
+            new Notification(title, { body: body, icon: 'images/logo.png' });
+        }
+    },
+
+    openProfile(entry) {
+        const modal = document.getElementById('profileModal');
+        document.getElementById('profileName').textContent = entry.userName;
+        document.getElementById('profileStatus').textContent = entry.status;
+        document.getElementById('profileRole').textContent = entry.role || 'Citizen';
+
+        let loc = 'Unknown';
+        if (entry.latitude && entry.longitude) {
+            loc = `${entry.latitude.toFixed(4)}, ${entry.longitude.toFixed(4)}`;
+        }
+        document.getElementById('profileLocation').textContent = loc;
+        document.getElementById('profileLastMsg').textContent = entry.message || 'No status message';
+
+        modal.style.display = 'flex';
     }
 };
 

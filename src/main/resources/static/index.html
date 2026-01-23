@@ -89,6 +89,13 @@
             </div>
         </aside>
 
+        <!-- Sidebar Footer (Settings) -->
+        <div class="sidebar-footer" style="position: absolute; bottom: 0; left: 0; width: 320px; padding: 1rem; background: rgba(30, 41, 59, 0.95); border-top: 1px solid var(--glass-border); display: flex; gap: 0.5rem; z-index: 10;">
+            <button id="btnSettings" class="btn btn-sm" style="width: 100%; background: transparent; border: 1px solid var(--glass-border);">
+                <i class="ph-bold ph-gear"></i> Settings
+            </button>
+        </div>
+
         <!-- Main Chat Area -->
         <main class="chat-area">
             <div class="messages-container" id="messagesContainer">
@@ -99,7 +106,17 @@
                 <!-- Messages injected here -->
             </div>
 
-                <div class="input-zone">
+                <!-- Quick Replies -->
+            <div class="quick-replies" id="quickReplies">
+                <button class="chip" data-msg="I am Safe">Safe</button>
+                <button class="chip" data-msg="Need Water">Need Water</button>
+                <button class="chip" data-msg="Need Food">Need Food</button>
+                <button class="chip" data-msg="Need Medical Help">Medical Help</button>
+                <button class="chip" data-msg="Where is shelter?">Shelter?</button>
+                <button class="chip" data-msg="Location Shared">Share Location</button>
+            </div>
+
+            <div class="input-zone">
                     <div class="input-row">
                         <div class="input-wrapper" style="flex: 0 0 auto; min-width: 120px;">
                              <i class="ph-bold ph-user input-icon"></i>
@@ -128,6 +145,74 @@
             <div class="modal-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button id="btnCancelLoc" class="btn btn-sm" style="background: transparent; border: 1px solid var(--glass-border);">Cancel</button>
                 <button id="btnConfirmLoc" class="btn btn-sm">Share Location</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display: none;">
+        <div class="modal-content card">
+            <h3 class="section-title" style="font-size: 1rem; margin-bottom: 1.5rem;">Settings & Profile</h3>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-secondary);">Your Role</label>
+                <div class="status-selector">
+                    <select id="userRole">
+                        <option value="Citizen">Citizen</option>
+                        <option value="Volunteer">Volunteer</option>
+                        <option value="Responder">First Responder</option>
+                        <option value="Medic">Medical Professional</option>
+                        <option value="Dispatcher">Dispatcher</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-size: 0.9rem; color: var(--text-secondary);">Enable Notifications</label>
+                <label class="switch">
+                    <input type="checkbox" id="toggleNotifications">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="user-info-display" style="padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 0.5rem; margin-bottom: 1.5rem;">
+               <div style="font-size: 0.8rem; color: var(--text-secondary);">Your ID</div>
+               <div style="font-family: monospace; color: var(--accent-color);" id="displayUserId">...</div>
+            </div>
+
+            <button id="btnCloseSettings" class="btn btn-sm" style="width: 100%;">Save & Close</button>
+        </div>
+    </div>
+
+    <!-- Profile View Modal -->
+    <div id="profileModal" class="modal" style="display: none;">
+        <div class="modal-content card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: var(--items-bg); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent-color);">
+                    <i class="ph-bold ph-user"></i>
+                </div>
+                <h3 id="profileName" style="font-size: 1.2rem; font-weight: bold;">User Name</h3>
+                <div id="profileRole" class="role-badge">Citizen</div>
+            </div>
+
+            <div class="profile-details" style="display: grid; gap: 1rem;">
+                <div class="detail-item">
+                    <div class="label">Status</div>
+                    <div id="profileStatus" class="value">Safe</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">Last Message</div>
+                    <div id="profileLastMsg" class="value" style="font-style: italic;">...</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">Location</div>
+                    <div id="profileLocation" class="value">Unknown</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button id="btnCloseProfile" class="btn btn-sm" style="flex: 1; background: transparent; border: 1px solid var(--glass-border);">Close</button>
+                <button id="btnMessageProfile" class="btn btn-sm" style="flex: 1;">Message</button>
             </div>
         </div>
     </div>
